@@ -10,7 +10,7 @@ library(haven)
 ```
 
 
-## Logit Up To Quad 
+## OLS Up To Quad 
 ```{r}
 read_data <- function(df)
 {
@@ -63,7 +63,7 @@ nsw_dw_cpscontrol <- read_data("cps_mixtape.dta") %>%
          interaction2 = u74*hisp)
 
 
-logit_nsw_quad <- glm(treat ~ age + agesq + educ + educsq + marr + nodegree + black + hisp + re74 + re75 + u74 + u75, family = binomial(link = "logit"), data = nsw_dw_cpscontrol)
+logit_nsw_quad <- lm(treat ~ age + agesq + educ + educsq + marr + nodegree + black + hisp + re74 + re75 + u74 + u75, data = nsw_dw_cpscontrol)
 
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
   mutate(pscore = logit_nsw_quad$fitted.values)
@@ -234,6 +234,20 @@ nsw_dw_cpscontrol %>%
   ggplot() +
   geom_histogram(aes(x = pscore))
 
+nsw_dw_cpscontroltrim <- nsw_dw_cpscontrol %>% 
+  select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
+  filter(!(pscore >= 0.9)) %>% 
+  filter(!(pscore <= 0.1))
+
+nsw_dw_cpscontroltrim %>% 
+  filter(treat == 0) %>% 
+  ggplot() +
+  geom_histogram(aes(x = pscore))
+
+nsw_dw_cpscontroltrim %>% 
+  filter(treat == 1) %>% 
+  ggplot() +
+  geom_histogram(aes(x = pscore))
 
 N <- nrow(nsw_dw_cpscontrol)
 
