@@ -443,11 +443,13 @@ nsw_dw_cpscontrol <- read_data("cps_mixtape.dta") %>%
          interaction1 = educ*re74,
          re74sq = re74^2,
          re75sq = re75^2,
+         re74cu = re74^3,
+         re75cu = re75^3,
          interaction2 = u74*hisp)
 
 # estimating
 logit_nsw <- glm(treat ~ age + agesq + agecube + educ + educsq + 
-                   marr + nodegree + black + hisp + re74 + re75 + u74 +
+                   marr + nodegree + black + hisp + re74 +re75 +re74sq +re74cu +re75cu + re75sq + u74 +
                    u75, family = binomial(link = "logit"), 
                  data = nsw_dw_cpscontrol)
 
@@ -633,11 +635,13 @@ nsw_dw_cpscontrol <- read_data("cps_mixtape.dta") %>%
          interaction1 = educ*re74,
          re74sq = re74^2,
          re75sq = re75^2,
+         re74cu = re74^3,
+         re75cu = re75^3,
          interaction2 = u74*hisp)
 
 # estimating
 ols_nsw <- lm(treat ~ age + agesq+agecube +educcub+ educ + educsq + 
-                   marr + nodegree + black + hisp + re74 + re75 + u74 +
+                   marr + nodegree + black + hisp + re74 +re75 +re74sq +re74cu +re75cu + re75sq + u74 +
                    u75, 
                  data = nsw_dw_cpscontrol)
 
