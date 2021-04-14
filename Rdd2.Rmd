@@ -3,13 +3,13 @@ title: "RDD2"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup, include=FALSE, }
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(haven)
 ```
 
-## Calculate a propensity score using OLS using up to a quadratic
+# Calculate a propensity score using OLS using up to a quadratic
 
 ```{r}
 read_data <- function(df)
@@ -22,10 +22,6 @@ read_data <- function(df)
 
 nsw_dw <- read_data("nsw_mixtape.dta")
 
-nsw_dw %>% 
-  filter(treat == 1) %>% 
-  summary(re78)
-
 mean1 <- nsw_dw %>% 
   filter(treat == 1) %>% 
   pull(re78) %>% 
@@ -33,9 +29,6 @@ mean1 <- nsw_dw %>%
 
 nsw_dw$y1 <- mean1
 
-nsw_dw %>% 
-  filter(treat == 0) %>% 
-  summary(re78)
 
 mean0 <- nsw_dw %>% 
   filter(treat == 0) %>% 
@@ -92,17 +85,13 @@ pscore_treated <- nsw_dw_cpscontrol %>%
   pull(pscore) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
-  filter(treat == 0) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
-
-nsw_dw_cpscontrol %>% 
-  filter(treat == 1) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
+ggplot(data=nsw_dw_cpscontrol, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+```
 
 ### Max and Min values of the scores for treated and control
+```{r,results='asis'}
 nsw_dw_cpscontroltreated <- nsw_dw_cpscontrol %>% 
   filter(treat == 1)
 
@@ -123,15 +112,9 @@ nsw_dw_cpscontrolcut <- nsw_dw_cpscontrol %>%
   filter(!(pscore >= 0.9)) %>% 
   filter(!(pscore <= 0.1))
 
-nsw_dw_cpscontrolcut %>% 
-  filter(treat == 0) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
-
-nsw_dw_cpscontrolcut %>% 
-  filter(treat == 1) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
+ggplot(data=nsw_dw_cpscontrolcut, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
 
 nsw_dw_cpscontroltreatedcut <- nsw_dw_cpscontrolcut %>% 
   filter(treat == 1)
@@ -215,6 +198,194 @@ nsw_dw_cpscontroln %>%
   mean()
 ```
 
+## Calculate a propensity score using logit using up to a quadratic
+
+```{r}
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
+
+nsw_dw <- read_data("nsw_mixtape.dta")
+
+mean1 <- nsw_dw %>% 
+  filter(treat == 1) %>% 
+  pull(re78) %>% 
+  mean()
+
+nsw_dw$y1 <- mean1
+
+
+mean0 <- nsw_dw %>% 
+  filter(treat == 0) %>% 
+  pull(re78) %>% 
+  mean()
+
+nsw_dw$y0 <- mean0
+
+ate <- unique(nsw_dw$y1 - nsw_dw$y0)
+
+nsw_dw <- nsw_dw %>% 
+  filter(treat == 1) %>% 
+  select(-y1, -y0)
+
+
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
+
+nsw_dw_cpscontrol <- read_data("cps_mixtape.dta") %>% 
+  bind_rows(nsw_dw) %>% 
+  mutate(agesq = age^2,
+         agecube = age^3,
+         educsq = educ*educ,
+         educcub=educsq*educ,
+         u74 = case_when(re74 == 0 ~ 1, TRUE ~ 0),
+         u75 = case_when(re75 == 0 ~ 1, TRUE ~ 0),
+         interaction1 = educ*re74,
+         re74sq = re74^2,
+         re75sq = re75^2,
+         interaction2 = u74*hisp)
+
+# estimating
+logit_nsw <- glm(treat ~ age + agesq+ educ + educsq + 
+                   marr + nodegree + black + hisp + re74 + re75 + u74 +
+                   u75, family = binomial(link = "logit"), 
+                 data = nsw_dw_cpscontrol)
+
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(pscore = logit_nsw$fitted.values)
+
+# mean pscore 
+pscore_control <- nsw_dw_cpscontrol %>% 
+  filter(treat == 0) %>% 
+  pull(pscore) %>% 
+  mean()
+
+pscore_treated <- nsw_dw_cpscontrol %>% 
+  filter(treat == 1) %>% 
+  pull(pscore) %>% 
+  mean()
+
+ggplot(data=nsw_dw_cpscontrol, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+```
+
+### Max and Min values of the scores for treated and control
+```{r,results='asis'}
+nsw_dw_cpscontroltreated <- nsw_dw_cpscontrol %>% 
+  filter(treat == 1)
+
+max(nsw_dw_cpscontroltreated$pscore) 
+min(nsw_dw_cpscontroltreated$pscore)
+
+nsw_dw_cpscontroluntreated<- nsw_dw_cpscontrol %>% 
+  filter(treat == 0)
+
+max(nsw_dw_cpscontroluntreated$pscore) 
+min(nsw_dw_cpscontroluntreated$pscore)
+
+```
+
+### Droping propensity score
+```{r}
+nsw_dw_cpscontrolcut <- nsw_dw_cpscontrol %>% 
+  filter(!(pscore >= 0.9)) %>% 
+  filter(!(pscore <= 0.1))
+
+ggplot(data=nsw_dw_cpscontrolcut, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+
+nsw_dw_cpscontroltreatedcut <- nsw_dw_cpscontrolcut %>% 
+  filter(treat == 1)
+
+max(nsw_dw_cpscontroltreatedcut$pscore) 
+min(nsw_dw_cpscontroltreatedcut$pscore)
+
+nsw_dw_cpscontroluntreatedcut <- nsw_dw_cpscontrolcut %>% 
+  filter(treat == 0)
+
+max(nsw_dw_cpscontroluntreatedcut$pscore) 
+min(nsw_dw_cpscontroluntreatedcut$pscore)
+
+```
+
+```{r}
+N <- nrow(nsw_dw_cpscontrol)
+#- Manual with non-normalized weights using all data
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(d1 = treat/pscore,
+         d0 = (1-treat)/(1-pscore))
+
+s1 <- sum(nsw_dw_cpscontrol$d1)
+s0 <- sum(nsw_dw_cpscontrol$d0)
+
+
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(y1 = treat * re78/pscore,
+         y0 = (1-treat) * re78/(1-pscore),
+         ht = y1 - y0)
+
+#- Manual with normalized weights
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(y1 = (treat*re78/pscore)/(s1/N),
+         y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
+         norm = y1 - y0)
+
+nsw_dw_cpscontrol %>% 
+  pull(ht) %>% 
+  mean()
+
+nsw_dw_cpscontrol %>% 
+  pull(norm) %>% 
+  mean()
+```
+
+```{r}
+#-- trimming propensity score
+nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
+  select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
+  filter(!(pscore >= 0.9)) %>% 
+  filter(!(pscore <= 0.1))
+
+N <- nrow(nsw_dw_cpscontroln)
+
+#- Manual with non-normalized weights using trimmed data
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(d1 = treat/pscore,
+         d0 = (1-treat)/(1-pscore))
+
+s1 <- sum(nsw_dw_cpscontroln$d1)
+s0 <- sum(nsw_dw_cpscontroln$d0)
+
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(y1 = treat * re78/pscore,
+         y0 = (1-treat) * re78/(1-pscore),
+         ht = y1 - y0)
+
+#- Manual with normalized weights with trimmed data
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(y1 = (treat*re78/pscore)/(s1/N),
+         y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
+         norm = y1 - y0)
+
+nsw_dw_cpscontroln %>% 
+  pull(ht) %>% 
+  mean()
+
+nsw_dw_cpscontroln %>% 
+  pull(norm) %>% 
+  mean()
+```
 
 ## Logit Up To Cube 
 
@@ -231,9 +402,6 @@ read_data <- function(df)
 
 nsw_dw <- read_data("nsw_mixtape.dta")
 
-nsw_dw %>% 
-  filter(treat == 1) %>% 
-  summary(re78)
 
 mean1 <- nsw_dw %>% 
   filter(treat == 1) %>% 
@@ -241,10 +409,6 @@ mean1 <- nsw_dw %>%
   mean()
 
 nsw_dw$y1 <- mean1
-
-nsw_dw %>% 
-  filter(treat == 0) %>% 
-  summary(re78)
 
 mean0 <- nsw_dw %>% 
   filter(treat == 0) %>% 
@@ -301,16 +465,12 @@ pscore_treated <- nsw_dw_cpscontrol %>%
   pull(pscore) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
-  filter(treat == 0) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
+ggplot(data=nsw_dw_cpscontrol, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+```
 
-nsw_dw_cpscontrol %>% 
-  filter(treat == 1) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
-
+```{r}
 ### Max and Min values of the scores for treated and control
 nsw_dw_cpscontroltreated <- nsw_dw_cpscontrol %>% 
   filter(treat == 1)
@@ -332,15 +492,9 @@ nsw_dw_cpscontrolcut <- nsw_dw_cpscontrol %>%
   filter(!(pscore >= 0.9)) %>% 
   filter(!(pscore <= 0.1))
 
-nsw_dw_cpscontrolcut %>% 
-  filter(treat == 0) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
-
-nsw_dw_cpscontrolcut %>% 
-  filter(treat == 1) %>% 
-  ggplot() +
-  geom_histogram(aes(x = pscore))
+ggplot(data=nsw_dw_cpscontrolcut, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
 
 nsw_dw_cpscontroltreatedcut <- nsw_dw_cpscontrolcut %>% 
   filter(treat == 1)
@@ -424,4 +578,205 @@ nsw_dw_cpscontroln %>%
   mean()
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+# OLS up to a cubic
+
+```{r}
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
+
+nsw_dw <- read_data("nsw_mixtape.dta")
+
+mean1 <- nsw_dw %>% 
+  filter(treat == 1) %>% 
+  pull(re78) %>% 
+  mean()
+
+nsw_dw$y1 <- mean1
+
+
+mean0 <- nsw_dw %>% 
+  filter(treat == 0) %>% 
+  pull(re78) %>% 
+  mean()
+
+nsw_dw$y0 <- mean0
+
+ate <- unique(nsw_dw$y1 - nsw_dw$y0)
+
+nsw_dw <- nsw_dw %>% 
+  filter(treat == 1) %>% 
+  select(-y1, -y0)
+
+
+read_data <- function(df)
+{
+  full_path <- paste("https://raw.github.com/scunning1975/mixtape/master/", 
+                     df, sep = "")
+  df <- read_dta(full_path)
+  return(df)
+}
+
+nsw_dw_cpscontrol <- read_data("cps_mixtape.dta") %>% 
+  bind_rows(nsw_dw) %>% 
+  mutate(agesq = age^2,
+         agecube = age^3,
+         educsq = educ*educ,
+         educcub=educsq*educ,
+         u74 = case_when(re74 == 0 ~ 1, TRUE ~ 0),
+         u75 = case_when(re75 == 0 ~ 1, TRUE ~ 0),
+         interaction1 = educ*re74,
+         re74sq = re74^2,
+         re75sq = re75^2,
+         interaction2 = u74*hisp)
+
+# estimating
+ols_nsw <- lm(treat ~ age + agesq+agecube +educcub+ educ + educsq + 
+                   marr + nodegree + black + hisp + re74 + re75 + u74 +
+                   u75, 
+                 data = nsw_dw_cpscontrol)
+
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(pscore = ols_nsw$fitted.values)
+
+# mean pscore 
+pscore_control <- nsw_dw_cpscontrol %>% 
+  filter(treat == 0) %>% 
+  pull(pscore) %>% 
+  mean()
+
+pscore_treated <- nsw_dw_cpscontrol %>% 
+  filter(treat == 1) %>% 
+  pull(pscore) %>% 
+  mean()
+
+ggplot(data=nsw_dw_cpscontrol, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+```
+
+### Max and Min values of the scores for treated and control
+```{r,results='asis'}
+nsw_dw_cpscontroltreated <- nsw_dw_cpscontrol %>% 
+  filter(treat == 1)
+
+max(nsw_dw_cpscontroltreated$pscore) 
+min(nsw_dw_cpscontroltreated$pscore)
+
+nsw_dw_cpscontroluntreated<- nsw_dw_cpscontrol %>% 
+  filter(treat == 0)
+
+max(nsw_dw_cpscontroluntreated$pscore) 
+min(nsw_dw_cpscontroluntreated$pscore)
+
+```
+
+### Droping propensity score
+```{r}
+nsw_dw_cpscontrolcut <- nsw_dw_cpscontrol %>% 
+  filter(!(pscore >= 0.9)) %>% 
+  filter(!(pscore <= 0.1))
+
+ggplot(data=nsw_dw_cpscontrolcut, aes(x = pscore)) +
+  geom_histogram() +
+  facet_wrap(~treat, scales = "free")
+
+nsw_dw_cpscontroltreatedcut <- nsw_dw_cpscontrolcut %>% 
+  filter(treat == 1)
+
+max(nsw_dw_cpscontroltreatedcut$pscore) 
+min(nsw_dw_cpscontroltreatedcut$pscore)
+
+nsw_dw_cpscontroluntreatedcut <- nsw_dw_cpscontrolcut %>% 
+  filter(treat == 0)
+
+max(nsw_dw_cpscontroluntreatedcut$pscore) 
+min(nsw_dw_cpscontroluntreatedcut$pscore)
+
+```
+
+```{r}
+N <- nrow(nsw_dw_cpscontrol)
+#- Manual with non-normalized weights using all data
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(d1 = treat/pscore,
+         d0 = (1-treat)/(1-pscore))
+
+s1 <- sum(nsw_dw_cpscontrol$d1)
+s0 <- sum(nsw_dw_cpscontrol$d0)
+
+
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(y1 = treat * re78/pscore,
+         y0 = (1-treat) * re78/(1-pscore),
+         ht = y1 - y0)
+
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(y1 = treat * re78,
+         y0 = (1-treat) * re78,
+         ht = y1 - y0)
+
+
+#- Manual with normalized weights
+nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
+  mutate(y1 = (treat*re78/pscore)/(s1/N),
+         y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
+         norm = y1 - y0)
+
+nsw_dw_cpscontrol %>% 
+  pull(ht) %>% 
+  mean()
+
+nsw_dw_cpscontrol %>% 
+  pull(norm) %>% 
+  mean()
+```
+
+```{r}
+#-- trimming propensity score
+nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
+  select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
+  filter(!(pscore >= 0.9)) %>% 
+  filter(!(pscore <= 0.1))
+
+N <- nrow(nsw_dw_cpscontroln)
+
+#- Manual with non-normalized weights using trimmed data
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(d1 = treat/pscore,
+         d0 = (1-treat)/(1-pscore))
+
+s1 <- sum(nsw_dw_cpscontroln$d1)
+s0 <- sum(nsw_dw_cpscontroln$d0)
+
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(y1 = treat * re78/pscore,
+         y0 = (1-treat) * re78/(1-pscore),
+         ht = y1 - y0)
+
+#- Manual with normalized weights with trimmed data
+nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>% 
+  mutate(y1 = (treat*re78/pscore)/(s1/N),
+         y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
+         norm = y1 - y0)
+
+nsw_dw_cpscontroln %>% 
+  pull(ht) %>% 
+  mean()
+
+nsw_dw_cpscontroln %>% 
+  pull(norm) %>% 
+  mean()
+
+```
+
+# Comparing results
+
+So when I compare my results to what was found in the mixtape I can see a clear pattern. The first pattern is that I consistently get results that are nowhere near to what I should find the mixtape when I use the OLS. This makes sense because we are doing a linear probability model which means that we can predict probabilities that are less than zero and more than 1, as we scan see from the minimum propensity scores when we do OLS. On the other hand, we get propensity scores that are in between 0 and 1 when we run a logit regression. Even though we are trimming the data, we still have the issue that our data set has been severely reduced, thus impacting our results. 
+
+When we run the logit regressions and we trim the data, we can see that our results are a lot closer to what we are supposed to get in the mixtape but they are not quite there. The reason for this is simple, we are not running the exact same regression as the on in the mixtape as we are not include the interaction variables. If we were to run the logit regression with the exact same covariates as in the mixtape, then we would get exactly the same response as he does. 
