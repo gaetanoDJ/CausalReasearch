@@ -647,7 +647,6 @@ ols_nsw <- lm(treat ~ age + agesq+agecube +educcub+ educ + educsq +
 
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
   mutate(pscore = ols_nsw$fitted.values)
-
 # mean pscore 
 pscore_control <- nsw_dw_cpscontrol %>% 
   filter(treat == 0) %>% 
