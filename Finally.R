@@ -25,31 +25,31 @@ UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter)
 
 write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP.xlsx")
 CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
+CleanUPWork <- collap(CleanUP, ~ stname + year)
+
+CleanUPWork$treated <- ifelse(CleanUPWork$treated>0,1,0)
+CleanUPWork$l_rape <- log(CleanUPWork$rape)
 
 
-atts <- att_gt(yname = "rape", # LHS variable
+
+
+atts <- att_gt(yname = "l_rape", # LHS variable
                tname = "year", # time variable
-               idname = "stname", # id variable
+               idname = "statefip", # id variable
                gname = "First.Treat", # first treatment period variable
-               data = CleanUP, # data
+               data = CleanUPWork, # data
                xformla = NULL, # no covariates
                #xformla = ~ l_police, # with covariates
-               est_method = "reg", # "dr" is doubly robust. "ipw" is inverse probability weighting. "reg" is regression
+               est_method = "dr", # "dr" is doubly robust. "ipw" is inverse probability weighting. "reg" is regression
                control_group = "nevertreated", # set the comparison group which is either "nevertreated" or "notyettreated" 
                bstrap = TRUE, # if TRUE compute bootstrapped SE
                biters = 1000, # number of bootstrap iterations
-               print_details = FALSE, # if TRUE, print detailed results
+               print_details = FALSE,
                clustervars = "statefip", # cluster level
                panel = TRUE) # whether the data is panel or repeated cross-sectional
 
-agg_effects <- aggte(atts, type = "group")
+agg_effects <- aggte(atts, type = "group", na.rm = TRUE)
 summary(agg_effects)
+summary(atts)
 
 
-testing <-  att_gt(yname = "rape",
-                   gname = "year",
-                   idname = "statefip",
-                   tname = "year",
-                   xformla = ~1,
-                   data = CleanUP,
-)
