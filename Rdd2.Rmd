@@ -7,6 +7,7 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 library(tidyverse)
 library(haven)
+library(stargazer)
 ```
 
 # Calculate a propensity score using OLS using up to a quadratic
@@ -90,7 +91,7 @@ ggplot(data=nsw_dw_cpscontrol, aes(x = pscore)) +
   facet_wrap(~treat, scales = "free")
 ```
 
-### Max and Min values of the scores for treated and control
+## Max and Min values of the scores for treated and control
 ```{r,results='asis'}
 nsw_dw_cpscontroltreated <- nsw_dw_cpscontrol %>% 
   filter(treat == 1)
@@ -106,7 +107,7 @@ min(nsw_dw_cpscontroluntreated$pscore)
 
 ```
 
-### Droping propensity score
+## Droping propensity score
 ```{r}
 nsw_dw_cpscontrolcut <- nsw_dw_cpscontrol %>% 
   filter(!(pscore >= 0.9)) %>% 
@@ -130,7 +131,7 @@ min(nsw_dw_cpscontroluntreatedcut$pscore)
 
 ```
 
-```{r}
+```{r, results='asis'}
 N <- nrow(nsw_dw_cpscontrol)
 #- Manual with non-normalized weights using all data
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
@@ -152,16 +153,19 @@ nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontrol %>% 
+linear.15 <- nsw_dw_cpscontrol %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
+linear.16 <- nsw_dw_cpscontrol %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.15,linear.16)
+stargazer(pleasework, header = FALSE)
 ```
 
-```{r}
+```{r,results='asis'}
 #-- trimming propensity score
 nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
   select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
@@ -189,16 +193,19 @@ nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontroln %>% 
+linear.13 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontroln %>% 
+linear.14 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.13,linear.14)
+stargazer(pleasework, header = FALSE)
 ```
 
-## Calculate a propensity score using logit using up to a quadratic
+# Calculate a propensity score using logit using up to a quadratic
 
 ```{r}
 read_data <- function(df)
@@ -319,7 +326,7 @@ min(nsw_dw_cpscontroluntreatedcut$pscore)
 
 ```
 
-```{r}
+```{r,results='asis'}
 N <- nrow(nsw_dw_cpscontrol)
 #- Manual with non-normalized weights using all data
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
@@ -341,16 +348,19 @@ nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontrol %>% 
+linear.11 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
+linear.12 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.11,linear.12)
+stargazer(pleasework, header = FALSE)
 ```
 
-```{r}
+```{r,results='asis'}
 #-- trimming propensity score
 nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
   select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
@@ -378,16 +388,19 @@ nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontroln %>% 
+linear.9 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontroln %>% 
+linear.10 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.9,linear.10)
+stargazer(pleasework, header = FALSE)
 ```
 
-## Logit Up To Cube 
+# Logit Up To Cube 
 
 
 ```{r}
@@ -512,7 +525,7 @@ min(nsw_dw_cpscontroluntreatedcut$pscore)
 
 ```
 
-```{r}
+```{r,results='asis'}
 N <- nrow(nsw_dw_cpscontrol)
 #- Manual with non-normalized weights using all data
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
@@ -534,16 +547,19 @@ nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontrol %>% 
+linear.7 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
+linear.8 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.7,linear.8)
+stargazer(pleasework, header = FALSE)
 ```
 
-```{r}
+```{r,results='asis'}
 #-- trimming propensity score
 nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
   select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
@@ -571,13 +587,16 @@ nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontroln %>% 
+linear.5 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontroln %>% 
+linear.6 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.5,linear.6)
+stargazer(pleasework, header = FALSE)
 ```
 
 
@@ -644,6 +663,7 @@ ols_nsw <- lm(treat ~ age + agesq+agecube +educcub+ educ + educsq +
                    marr + nodegree + black + hisp + re74 +re75 +re74sq +re74cu +re75cu + re75sq + u74 +
                    u75, 
                  data = nsw_dw_cpscontrol)
+
 
 nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>% 
   mutate(pscore = ols_nsw$fitted.values)
@@ -731,16 +751,19 @@ nsw_dw_cpscontrol <- nsw_dw_cpscontrol %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontrol %>% 
+linear.1 <- nsw_dw_cpscontroln %>% 
   pull(ht) %>% 
   mean()
 
-nsw_dw_cpscontrol %>% 
+linear.2 <- nsw_dw_cpscontroln %>% 
   pull(norm) %>% 
   mean()
+
+pleasework <- c(linear.1,linear.2)
+stargazer(pleasework, header = FALSE)
 ```
 
-```{r}
+```{r, results='asis'}
 #-- trimming propensity score
 nsw_dw_cpscontroln <- nsw_dw_cpscontrol %>% 
   select(-d1, -d0, -y1, -y0, -ht, -norm) %>% 
@@ -768,14 +791,11 @@ nsw_dw_cpscontroln <- nsw_dw_cpscontroln %>%
          y0 = ((1-treat)*re78/(1-pscore))/(s0/N),
          norm = y1 - y0)
 
-nsw_dw_cpscontroln %>% 
-  pull(ht) %>% 
-  mean()
+linear.3 <- mean(nsw_dw_cpscontroln$ht) 
+linear.4 <- mean(nsw_dw_cpscontroln$norm)
 
-nsw_dw_cpscontroln %>% 
-  pull(norm) %>% 
-  mean()
-
+pleasework <- c(linear.3,linear.4)
+stargazer(pleasework, header = FALSE,title="Results From Cubic OLS")
 ```
 
 # Comparing results
