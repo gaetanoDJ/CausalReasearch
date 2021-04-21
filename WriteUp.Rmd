@@ -1,3 +1,10 @@
+---
+title: "Causal Project"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
 library(did)
 library(haven)
 library(dplyr)
@@ -8,35 +15,70 @@ library(stats)
 library(collapse)
 library(xlsx)
 library(kableExtra)
+library(readxl)
+```
 
+## Describing the Data and Methodology
+
+ 
+
+```{r, echo=FALSE, include=FALSE}
+# This is the preparation file that imports the cleaned and reduced version of all the datasets, using Stata, of my data 
 # ucr_meth <- read_dta("G:/Causal Inference/Data/ucr_meth.dta")
-# ucr_meth <- read_dta("C:/Users/gaeta/Documents/GitHub/CausalReasearch/ucr_meth.dta")
-UCR <- zap_formats(ucr_meth)
-UCR<- zap_label(UCR)
+ucr_meth <- read_dta("C:/Users/gaeta/Documents/GitHub/CausalReasearch/ucr_meth.dta")
 
+UCR <- zap_formats(ucr_meth) #
+UCR<- zap_label(UCR) # Need to zap stuff because my data set does not play nice with R
 
-
+# Dropping the states that were dropped
 remove <- c("AL", "AK", "AZ", "AR", "CA", "CT", "DC","DE", "HI", "ME", "MA", "MS", "NH", "NJ", "NY", "OR", "PA", "RI", "VT", "WA", "WY", "KY")
 UCR <- UCR[!UCR$stname %in% remove,]
-UCR <- UCR[complete.cases(UCR), ]
-
+UCR <- UCR[complete.cases(UCR), ] # dropping varables without a name or stateip
 
 UCRQuarter <- UCR %>%
-  mutate(Quarter = ceiling(as.numeric(UCR$month) / 3))
+  mutate(Quarter = ceiling(as.numeric(UCR$month) / 3)) # Specifying which quarter the data belongs in accroding to the month
 
-UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter)
+UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter) # Aggregating by the state name, the year and quarter 
 
-write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP1.xlsx")
-
-
-CleanUP <- read.xlsx("G:/Causal Inference/Data/CleanUP.xlsx")
-CleanUPWork <- collap(CleanUP, ~ stname + year, custom = list(fmean= 22, fmean= 1, fsum = 4:21, fsum = 23))
-
-CleanUPWork$treated <- ifelse(CleanUPWork$treated>1,1,0)
+# write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP1.xlsx") # Exporting the data as an excel spreadsheet so that I can mually add in the First.Treat and treat columns 
+write.xlsx(UCRTEST, file = "C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP1.xlsx")
 
 
+# Read in the modified excel spreadsheet
+# CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
+CleanUP <- read_excel("C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP.xlsx")
+
+CleanUPWork <- collap(CleanUP, ~ stname + year, custom = list(fmean= 22, fmean= 1, fsum = 4:21, fsum = 23)) # Collapse data where we are taking the mean of column 1 and 22, representing state id and year, and summing the rest of the rows 
+
+CleanUPWork$treated <- ifelse(CleanUPWork$treated>1,1,0) # need to round the treated column down to 1 if greater than 1 as we want it to be a binary.
+```
+
+For this paper, I will be using data from the FBI's Uniform Crime Reporting (UCR) Program from 1997 to 2007 that I have acquired from Justin McCrary's personal page as well as the same states used by Callaway and Sant'Anna (2020). 
+
+The UCR collects the number of offenses that have come to the attention of law enforcement for violent and property crime, as well as data concerning clearances of these  offenses. Violent crimes are defined in the UCR Program as offenses that involve force or threat of force, thus including murder, manslaughter, rape, robbery and aggravated assaults. On the other hand, crimes such as burglary, larceny/theft, motor vehicle theft and arson are considered as property crime as there is no use of force or threat of force against the victims. 
+
+I decided to not include aggravated assaults and arson offenses as they are either redundant, as it is the case for aggravated assaults, or there is only a limited amount of data, as is the case for arson. 
+In the case for aggravated assaults, the FBI states that when "aggravated assault and larceny-theft occur together, the offense falls under the category of robbery" meaning that the crime occurred due to a financial motive that might be impacted by changes in the minimum wage, either because the victim is perceived as wealthier by the criminal or the criminal lost their source of income. 
 
 
+However, one could argue that I should not incldue the rest of the violent crimes (i.e. murder, manslaughter and rape) as these are crimes with the purpose of committing harm. I argue that some of these crimes could have occurred as an escalation of non-violent crimes, thus making these violent crimes more akin to crime of opportunity. Unlike the distinction between robbery and aggravated assault, it is unclear whether police report a crime as both a rape, or any other violent crime, and robbery or if they just report the crime as the most serious offense. Either way, the inclusion of these violent crimes, regardless of their motive, does not change the results as I am looking at the effect of changes to the minimum wage on all types of crime.
+
+In order to perform my analysis, I am using the same method as Callaway and Sant'Anna (2020) called difference-in-difference with multiple time periods rather than the regular difference-in-difference (DID) method. The reason is that a regular DID setup requires that there are two time periods and two groups: in the first period no group is treated, and in the second period one group is treated whereas the other is not. However, changes in the minimum wage have occurred in in some states at different time periods and have not occurred in others. Consequently, this means that we have a consistent group of states that are untreated, as they have not changed their minimum wage, but we have a group of states that are "treated" at different time periods, thus making a regular DID difficult to do. 
+
+The core of their method is to separate the DID analysis into three separate steps: identification, aggregation of parameters, and estimation about these different parameters. 
+
+  
+
+## Performing the Analysis
+
+### Identification
+
+Given that there are different potential outcomes for each state that cannot be observed for the same state at the same time, we need to identify and estimate the causal effect of treatment. As we can see from the table of the group-time average treatment effects without covariates on larceny crimes that there is evidence of a positive effect of the minimum wage on larceny crimes. These results suggest that I should aggregate the group-time average treatment effect.
+
+
+When I aggregate the group-time average treatment effect, the positive effect of minimum wage on larceny is still statistically significant. 
+
+```{r}
 ############################## rape
 attrape_pc <- att_gt(yname = "rape_pc", # LHS variable
                tname = "year", # time variable
@@ -53,7 +95,6 @@ attrape_pc <- att_gt(yname = "rape_pc", # LHS variable
                panel = TRUE) # whether the data is panel or repeated cross-sectional
 
 # Aggregate ATT
-
 agg_effects <- aggte(attrape_pc, type = "group")
 summary(agg_effects)
 
@@ -278,7 +319,8 @@ Table <- cbind(Description,Murder = c(murder), Manslaughter = c(manslaughter), R
 
 
 
-kbl(Table, caption = "Minimum Wage Aggreagted Treatment Effect Estimates", booktabs =T)%>%
+kbl(Table,format = "latex", caption = "Minimum Wage Aggreagted Treatment Effect Estimates", booktabs =T)%>%
 add_header_above(c(" ","Violent Crimes"=3,"Non-Violent Crimes"=4))  %>%
   kable_styling(latex_options =c("striped","hold_position")) %>%
   row_spec(0:2,align = "c")
+```
