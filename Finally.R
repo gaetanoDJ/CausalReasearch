@@ -7,6 +7,8 @@ library(lubridate)
 library(stats)
 library(collapse)
 library(xlsx)
+library(kableExtra)
+
 ucr_meth <- read_dta("G:/Causal Inference/Data/ucr_meth.dta")
 UCR <- zap_formats(ucr_meth)
 UCR<- zap_label(UCR)
@@ -24,7 +26,7 @@ UCRQuarter <- UCR %>%
 UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter)
 
 write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP.xlsx")
-CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
+CleanUP <- read.xlsx("G:/Causal Inference/Data/CleanUP.xlsx")
 CleanUPWork <- collap(CleanUP, ~ stname + year, custom = list(fmean= 22, fmean= 1, fsum = 4:21, fsum = 23))
 
 CleanUPWork$treated <- ifelse(CleanUPWork$treated>1,1,0)
@@ -60,7 +62,7 @@ ggdid(attrape_pc)
 # Event-study
 agg_effects_es <- aggte(attrape_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es)
-
+rape <- cbind(c(round(agg_effects_es$overall.att, digits = 3), "(-9.37, 2.67)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es)
 
@@ -95,7 +97,7 @@ ggdid(attlarceny_pc)
 # Event-study you want this 
 agg_effects_es1 <- aggte(attlarceny_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es1)
-
+larceny <- cbind(c(round(agg_effects_es1$overall.att, digits = 3), "(14.11, 227.28)*"))
 # Plot event-study coefficients
 ggdid(agg_effects_es1)                
 
@@ -132,7 +134,7 @@ ggdid(attvehicle_pc)
 # Event-study you want this 
 agg_effects_es2 <- aggte(attvehicle_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es2)
-
+vehicle <- cbind(c(round(agg_effects_es2$overall.att, digits = 3), "(-165.03, 354.94)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es2)  
 
@@ -164,7 +166,7 @@ ggdid(attburglary_pc)
 # Event-study you want this 
 agg_effects_es3 <- aggte(attburglary_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es3)
-
+burglary <- cbind(c(round(agg_effects_es3$overall.att, digits = 3), "(-37.72, 67.14)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es3) 
 
@@ -196,7 +198,7 @@ ggdid(attmanslaughter_pc)
 # Event-study you want this 
 agg_effects_es4 <- aggte(attmanslaughter_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es4)
-
+manslaughter <- cbind(c(round(agg_effects_es4$overall.att, digits = 3), "(-0.024, 0.076)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es4)  
 
@@ -228,7 +230,7 @@ ggdid(attrobbery_pc)
 # Event-study you want this 
 agg_effects_es5 <- aggte(attrobbery_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es5)
-
+robbery <- cbind(c(round(agg_effects_es4$overall.att, digits = 3), "(-4.37, 13.57)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es5) 
 
@@ -261,5 +263,19 @@ ggdid(attmurder_pc)
 agg_effects_es6 <- aggte(attmurder_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es6)
 
+murder <- cbind(c(round(agg_effects_es6$overall.att, digits = 3), "(-1.05,0.31)"))
+
 # Plot event-study coefficients
 ggdid(agg_effects_es6) 
+
+tidy(agg_effects_es6)
+
+Description <- rbind("Overall ATT", "95% CI")
+Table <- cbind(Description,Murder = c(murder), Manslaughter = c(manslaughter), Rape = c(rape), Vehicle = c(vehicle), Robbery = c(robbery), Larceny = c(larceny), Burglary = c(burglary))
+
+
+
+kbl(Table, caption = "Minimum Wage Aggreagted Treatment Effect Estimates", booktabs =T)%>%
+add_header_above(c(" ","Violent Crimes"=3,"Non-Violent Crimes"=4))  %>%
+  kable_styling(latex_options =c("striped","hold_position")) %>%
+  row_spec(0:2,align = "c")
