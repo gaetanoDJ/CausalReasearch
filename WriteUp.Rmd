@@ -4,6 +4,7 @@ output:
   pdf_document: default
   html_document:
     df_print: paged
+  word_document: default
 ---
 
 ```{r setup, include=FALSE, message=FALSE}
@@ -21,14 +22,24 @@ library(kableExtra)
 library(readxl)
 ```
 
+
+
+
+  Calls to increase the federal minimum wage to \$15 an hour has gained traction in recent policy debates in the United States, propelled by the fact that the last increase occurred in 2009 to the current \$7.25. Although the minimum wage has no kept up with inflation, the debate revolves around the impact that an increase in the Federal minimum wage will have on employment. Some policy makers believe that there will be a negative short-run and long-run effect, whereas others believe there will only be a negative short-run effect, and some argue that there will be no negative impacts whatsoever. The issue is that, unlike some other policy debates, there is evidence that supports the claims made by both sides. In fact, since Card and Krueger’s (1994) study, there is not even a consensus among economist on how to measure or study the effect of minimum wage increases. Some researchers have only focused on the impact on teen employment (Allegretto et al. 2017, Callaway and Sant’Anna 2020), whereas others have focused only on specific sectors (authors and what not), and others have focused on the overall population (authors and whatnot). 
+
+One of the most interesting arguments supporting the minimum wage increase is that an increase in the minimum wage will lead to a decrease in overall crime rates as claimed by the Council of Economic Advisors (2016). The theory behind the claim is that an increase to the minimum wage will increase the opportunity cost of committing a crime, as the criminal could be earning more by having a minimum wage job that committing crime. Notwithstanding that this argument relies on the fact that there will be no negative effect on employment, the economic theory is intuitive for two reasons. The first is that, since the federal minimum wage has no kept pace with inflation, an increase in wage means that the worker has more disposable income to sustain themselves, thus they do not need to find another source of income, such as committing property crimes, to acquire their necessities, for example diapers. The second reason is that it also increases the cost of crime if the criminal gets caught, as the time they spend in jail/court they could have spent working and earning. However, there are two issues with this argument. The first is that the cost of crime might not have increased, rather it might have decreased. Assuming that there is no loss in employment, its own thorny issue, people’s income have increase, therefore they buy more goods, that they previously could not afford, or they carry more cash on themselves. In either case, people whose minimum wage has increased are now “richer” targets and might offset the increase in cost of committing crime mentioned earlier and even decrease it. The other issue is that an increase in the minimum wage might lead to a decrease in employment thus pushing workers into committing crimes, either due to “teen idleness” or as alternative source of income. Again, just like the literature concerning the impact of minimum wage increases on employment, there is no clear evidence to support or refute the claim that minimum wage increase will decrease crime. Hashimoto (1987) managed to estimate a time series regression and found that increases in the federal minimum wage are positively correlated with property crimes committed by teenagers. Beauchamp and Chan (2014) also found positive evidence of a positive correlation with property and violent crimes committed by teenagers, but there is a negative correlation with young adults. Therefore, just like the literature on minimum wage and employment, there is no clear result. 
+ 	
+By using the Federal Bureau of Investigation’s Uniform Crime Reporting (UCR) program and a new research method developed by Callaway and Sant’Anna (2020), this paper seeks to make contributions to the existing literature on the direct effect of increasing minimum wage on overall crime rates in an attempt to clarify the effects. 
+
+
 ## Describing the Data and Methodology
 
  
 
 ```{r, echo=FALSE, include=FALSE}
 # This is the preparation file that imports the cleaned and reduced version of all the datasets, using Stata, of my data 
- ucr_meth <- read_dta("G:/Causal Inference/Data/ucr_meth.dta")
-# ucr_meth <- read_dta("C:/Users/gaeta/Documents/GitHub/CausalReasearch/ucr_meth.dta")
+# ucr_meth <- read_dta("G:/Causal Inference/Data/ucr_meth.dta")
+ ucr_meth <- read_dta("C:/Users/gaeta/Documents/GitHub/CausalReasearch/ucr_meth.dta")
 
 UCR <- zap_formats(ucr_meth) #
 UCR<- zap_label(UCR) # Need to zap stuff because my data set does not play nice with R
@@ -43,39 +54,31 @@ UCRQuarter <- UCR %>%
 
 UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter) # Aggregating by the state name, the year and quarter 
 
- write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP1.xlsx") # Exporting the data as an excel spreadsheet so that I can mually add in the First.Treat and treat columns 
-# write.xlsx(UCRTEST, file = "C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP1.xlsx")
+ # write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP1.xlsx") # Exporting the data as an excel spreadsheet so that I can mually add in the First.Treat and treat columns 
+write.xlsx(UCRTEST, file = "C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP1.xlsx")
 
 
 # Read in the modified excel spreadsheet
- CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
-# CleanUP <- read_excel("C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP.xlsx")
+# CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
+CleanUP <- read_excel("C:/Users/gaeta/Documents/GitHub/CausalReasearch/CleanUP.xlsx")
 
 CleanUPWork <- collap(CleanUP, ~ stname + year, custom = list(fmean= 22, fmean= 1, fsum = 4:21, fsum = 23)) # Collapse data where we are taking the mean of column 1 and 22, representing state id and year, and summing the rest of the rows 
 
 CleanUPWork$treated <- ifelse(CleanUPWork$treated>1,1,0) # need to round the treated column down to 1 if greater than 1 as we want it to be a binary.
 ```
 
-Calls to increase the minimum to $15 an hour has featured prominently in recent policy debates in the United States at every level: federal, state, and even local. Even though nearly three decades have passed since Card and Krueger’s “Minimum Wages and Employment” paper in 1994, there is surprisingly a large controversial literature on the effects of minimum wage increases on overall employment.  Some researchers have only focused on the impact on teen employment (Card 1992; Allegretto et al. 2017, Callaway and Sant’Anna 2020), whereas others focus solely on specific sectors. Furthermore, there is very little research about the effects of increases of the minimum wage on overall crime rates, and whether there is a direct causal effect of these increases on the overall crime. Even in the literature concerning minimum wage increases and overall crime there is some controversy. For example, Hashimoto (1987) managed to estimate a time series regression and found that increase in the federal minimum wage are positively correlated to property crimes for teenagers. This is supported by Beauchamp and Chan (2014) who also find evidence that the increase to minimum wage leads to an increase in property and violent crimes caused by teenagers, but on the other hand, decrease for young adults. This paper seeks to make contributions to the existing literature on minimum wage by using the Federal Bureau of Investigation’s Uniform Crime Reporting program (UCR) and new research method developed by Callaway and Sant’Anna (2020). 
 
-For this paper, the primary data source for my crime analysis is the UCR and information provided by Callaway and Sant’Anna (2020), namely the 29 states that I will be using. The UCR allows me to generate criminal arrest rates from 1997 to 2007 by county  and by year. The UCR collects the number of offenses that have come to the attention of law enforcement for violent and property crimes, as well as data concerning clearances of these offenses, which I will not be using. Violent crimes are defined by the FBI as offenses that involve force or the threat of force, whereas property crimes are offenses that do not involve force or the threat of force. The offenses that I will be paying particular attention to are murder, manslaughter, rape, robbery, burglary, larceny and vehicle theft.
+
+The primary data source for this paper is the UCR provided by NAME OF PRESON containing the criminal arrest rates by counties in all 50 states plus D.C.  from 1997 to 2007. However, following Callaway and Sant’Anna (2020), I will only be looking at 29 states. The UCR collects the number of offenses that have come to the attention of law enforcement for violent and property crimes, as well as data concerning clearances of theses offenses that is not used in this paper. The FBI defines violent crimes as offenses that involve force or threat of force, whereas property crimes do not. The offenses that I will be paying particular attention to are murder, manslaughter, rape, robbery, burglary, larceny and vehicle theft.
 	
-I decided to not include aggravated assaults and arson offenses as they either redundant, as it is the case for aggravated assaults, or there is a limited amount of data, as it is the case for arson. I deem that aggravated assaults are redundant with robbery because the FBI clearly states that when aggravated assault and larceny occur together the offense should be considered as robbery. However, once could argue that I should also not include the rest of the violent crimes, except for robbery, because these are non-financially motivated crimes. I argue that these crimes should be included as there a might be a significant correlation, and possibly causation, between financially motivated and non-financially motivated crimes. Unlike the clear statement from the FBI’s UCR page concerning the distinction between aggravated assault and larceny, there is no evidence to suggest that police report a theft and murder as either a murder or a theft crime allowing for the possibility for the same crime to be reported “twice”, one for each offense. Since it is conceivable that there might be cases where robberies lead to offenses of manslaughter or murder, in what I refer to as an escalation of crime, it is possible that these non-financially motivated crimes might be indirectly impacted by changes to the minimum wage.   
 
-
-In order to perform my analysis, I am using the same method as Callaway and Sant’Anna (2020) called the difference-in-difference with multiple time periods, rather than the regular difference-in-difference (DID). As I am considering a time period from 1997 to 2007, a period where the federal minimum wage had remained at $5.15 an hour, there have been some states that increased their minimum wage throughout this period, thus becoming part of the treated group, whereas others have kept their minimum wage at the federal minimum, these are considered as the untreated group. The states that have not changed their minimum wages during this time period, but had their minimum wages higher than the federal minimum wage have been dropped. This leaves me with a total of 29 states. The only major methodological difference between my paper and Callaway and Sant’Anna’s is that they focus on county level teen employment, whereas I look at the state level overall crime per capita.  The benefit of using this new research method is that the states that have changed their minimum wage have done so at different timings, thus making a normal two way fixed effect or DID difficult to do. 
-
-A regular DID analysis requires the researcher to setup two time periods and two groups: in the first period no one is treated and then in the second period one group is treated and the other is not. However, since changes in the minimum wage have occurred at different time periods it is difficult to estimate the true causal effect of increasing the minimum wage. In the following sections I will be perform my analysis, comment on my results and explain the limitations of my paper.
+  In order to perform the analysis, I will be using the method proposed, and created by, Callaway and Sant’Anna (2020) called the difference-in-difference with multiple time periods, instead of a regular difference-in-difference (DID) method. As I am considering a time period from 1997 to 2007, a period where the federal minimum wage had remained at $5.15 an hour, there have been come states that have increased their minimum wage throughout this period, mostly occurring a couple of years before the 2009 federal minimum increase. The states that have seen an increase in their minimum wage are part of the treated group, whereas the states that have not changed their minimum wage paper are part of the untreated group. The states that have not changed their minimum wage but had a higher state minimum wage have been dropped from the data, thus leaving only 29 states to be observed. The reason that a DID method is not recommended in this case study is because states that have increased their minimum wages have done so at different times. The DID method requires two time periods and two groups –  in period one no one is treated, in period two one group is treated and the other is not – to allow us to estimate the causal effect. The Callaway and Sant’Anna method allows for a difference-in-difference method to be used over multiple treatment time periods. As I am replicating Callaway and Sant’Anna’s paper but focusing only on crime rates, it is important to note that my data set is looking overall crime rates at the state level, not the county level. Based on current literature, and economic theory, I suspect that we will see that there are no statistically significant effect of minimum wage increases on non-financially motivated crimes (rape, manslaughter, murder) and statistically significant positive effects on financially motivated crimes, meaning that crime rates for these types of crimes will increase.
 
  
-
-  
-
 ## Performing the Analysis
 
-### Identification
+### Non-Financially Motivated Crimes
 
-Given that there are different potential outcomes for each state that cannot be observed for the same state at the same time, we need to identify and estimate the causal effect of treatment. 
 ```{r}
 ############################## rape
 attrape_pc <- att_gt(yname = "rape_pc", # LHS variable
@@ -93,15 +96,15 @@ attrape_pc <- att_gt(yname = "rape_pc", # LHS variable
                panel = TRUE) # whether the data is panel or repeated cross-sectional
 
 ```
-```{r, , out.height = '80%', fig.align='center'}
+```{r, , out.height = '45%', fig.align='center'}
 # Plot group-time ATTs
 knitr::include_graphics("attrape_pc.png")
 
 ```
 
-As we can see in the above graph, there is no statistically significant effect of minimum wage increase on the number of rapes per capita. In fact, there is no statistically significant effect on any of the violent non-financial crimes. These results are rather unsurprising as these types of crimes are usually motivated by the willingness to cause harm, as is the case for murder, rape, and manslaughter (i.e. a bar fight gone badly). Since changes in the minimum wage might financially affect criminals, the only way for non-financial crimes to be affected is if there is a significant percentage of these that are explained by “escalation of crimes.” For example, if a criminal is mugging a couple, thus committing robbery, they fight back and the robber kills the husband, he will be charged with manslaughter, and possibly robbery if the UCR allows for both. In this example, the criminal did not want to kill man as he was simply finically motivated, but the crime escalated into a non-financial crime. If these types of “escalations of crime” made statistically significant part of non-financial crimes, then they would be indirectly affected by changes in the minimum wage, assuming that financially motivated crimes are affected by the changes. However, this is unlikely to be the case as the graphs indicate that there was a statistically significant positive effect of the minimum wage increase on robberies in 2006 for groups that were treated in 2005.  
+As we can see in the above graph, there is no statistically significant effect of minimum wage increases on the number of rapes per capita. In fact, there are no statistically significant effect on any of the other non-financially motivated crimes, as theorized. These results are rather surprising due to the nature of the crime, they were committed with the intent to harm. The only way for there to be a statistically significant effect is if a significant number of these violent crimes are “escalation of crimes”, meaning that these non-financially motivated crimes started off as financially motivated crimes. For example, a criminal committing a crime of burglary gets startled and accidentally kills the homeowner. He is arrested for, and the crime is reported as, murder. In this scenario, the criminal escalated the criminal act of burglary to murder without intending to do so. Therefore, if there was a significant increase in the number of burglaries and an increase in the number of murders, then it could be theorized that the minimum wage increase has indirectly positively affected the murder rate by increasing the number of burglaries. However, this would be assuming that there is statistically significant effect on both non-financially and financially motivated crimes. For now, the only conclusion that can be made is that increases to the minimum wage does not affect non-financially motivated crimes.  
 
-
+  In contrast to the lack of statically significant effects on non-financially motivated crimes, there is some evidence of positive effects of increases of the minimum wage on financially motivated crimes. As shown in the plots below, larceny has two group-time average treatment effects that are statistically different from 0, whereas vehicle theft, burglary and robbery have one.  This seems to provide evidence refuting the claim that increases to the minimum wage will decrease crime by increasing its opportunity cost. However, it is unclear from the plots whether this is due to the victims are considered “wealthier” or if the criminals were pushed into committing crimes due to a loss of employment. What is interesting is that the small number of  group-time average treatment effects that are statistically different from 0 seems to suggest that the aggregated group-time average treatment effects are going to be statistically insignificant. 
 
 
 ```{r, fig.align='center'}
@@ -131,36 +134,15 @@ attlarceny_pc <- att_gt(yname = "larceny_pc", # LHS variable
 
 ```
 
-```{r, out.height = '80%' , fig.align='center'}
+```{r, fig.align='default', out.height= '40%', out.width='50%'}
 # Plot group-time ATTs
-knitr::include_graphics("attlarceny_pc.png")
-
+knitr::include_graphics(c("attlarceny_pc.png","attvehicle_pc.png"))
 ```
 
-
-```{r, out.height = '80%' , fig.align='center'}
+```{r, fig.align='default', out.height= '40%', out.width='50%'}
 # Plot group-time ATTs
-knitr::include_graphics("attvehicle_pc.png")
-
+knitr::include_graphics(c("attrobbery_pc.png","attburglary_pc.png"))
 ```
-
-```{r, out.height = '80%' , fig.align='center'}
-# Plot group-time ATTs
-knitr::include_graphics("attburglary_pc.png")
-
-```
-
-```{r, out.height = '80%' , fig.align='center'}
-# Plot group-time ATTs
-knitr::include_graphics("attrobbery_pc.png")
-
-```
-
-In contrast to the lack of effects on non-financially motivated crimes, there is some evidence of positive effects of the minimum wage on financially motivated crimes. As we can see from the various graphs below, larceny has two group-time average treatment effects that are statistically different from 0, whereas vehicle theft, burglary and robbery have one.  These results are very interesting because they seem to suggest that financially motivated crimes are largely unaffected by change in the minimum wage, thus neither supporting nor denying the argument that changes to the minimum will greatly increase crime, due to teen idleness, or decrease crime, due to an increase in opportunity costs. However, to confirm the evidence, we would need to aggregate the group-time average treatment effects. The results can be seen in table below.   
-
-
-
-
 
 
 ```{r}
