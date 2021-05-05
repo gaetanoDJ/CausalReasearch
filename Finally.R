@@ -29,7 +29,7 @@ UCRTEST <- collapse::collap(UCRQuarter, ~ stname + year + Quarter)
 write.xlsx(UCRTEST, file = "G:/Causal Inference/Data/CleanUP1.xlsx")
 
 
-CleanUP <- read.xlsx("G:/Causal Inference/Data/CleanUP.xlsx")
+CleanUP <- read_excel("G:/Causal Inference/Data/CleanUP.xlsx")
 CleanUPWork <- collap(CleanUP, ~ stname + year, custom = list(fmean= 22, fmean= 1, fsum = 4:21, fsum = 23))
 
 CleanUPWork$treated <- ifelse(CleanUPWork$treated>1,1,0)
@@ -54,18 +54,34 @@ attrape_pc <- att_gt(yname = "rape_pc", # LHS variable
 
 # Aggregate ATT
 
-agg_effects <- aggte(attrape_pc, type = "group")
-summary(agg_effects)
+
+
+
+
 
 # Group-time ATTs
 summary(attrape_pc)
 
+
+GroupRape <- c(attrape_pc$group)
+TimeRape <- c(attrape_pc$t)
+ATTRape <- c(attrape_pc$att)
+Rapese <- c(attrape_pc$se)
+CILowerRape <- c((attrape_pc$att - 2.565*(sd(attrape_pc$att)/sqrt(6))))
+CIHIgherRape <- c((attrape_pc$att + 2.565* (sd(attrape_pc$att)/sqrt(6))))
+
+GTATERape <- data.frame(GroupRape,TimeRape,ATTRape,Rapese,CILowerRape,CIHIgherRape)
+
 # Plot group-time ATTs
-ggdid(attrape_pc)
+
+ggdid(attrape_pc, title = "Group-Time ATT for Rape") 
+ggsave("attrape_pc.png")
 
 # Event-study
 agg_effects_es <- aggte(attrape_pc, type = "dynamic", na.rm = TRUE)
 summary(agg_effects_es)
+
+
 rape <- cbind(c(round(agg_effects_es$overall.att, digits = 3), "(-9.37, 2.67)"))
 # Plot event-study coefficients
 ggdid(agg_effects_es)
@@ -262,6 +278,7 @@ summary(attmurder_pc)
 
 # Plot group-time ATTs
 ggdid(attmurder_pc)
+ggsave("attmurder_pc1.png", height = )
 
 # Event-study you want this 
 agg_effects_es6 <- aggte(attmurder_pc, type = "dynamic", na.rm = TRUE)
@@ -278,7 +295,23 @@ Table <- cbind(Description,Murder = c(murder), Manslaughter = c(manslaughter), R
 
 
 
+
 kbl(Table, caption = "Minimum Wage Aggreagted Treatment Effect Estimates", booktabs =T)%>%
 add_header_above(c(" ","Violent Crimes"=3,"Non-Violent Crimes"=4))  %>%
   kable_styling(latex_options =c("striped","hold_position")) %>%
   row_spec(0:2,align = "c")
+
+ggdid(attmurder_pc, title = "Average Group Treatment Effect for Murder Treated in")
+ggsave("attmurder_pc.png", height = 9)
+ggdid(attrobbery_pc, title = "Average Group Treatment Effect for Robbery Treated in")
+ggsave("attrobbery_pc.png", height = 9)
+ggdid(attmanslaughter_pc, title = "Average Group Treatment Effect for Manslaughter Treated in")
+ggsave("attmanslaughter_pc.png", height = 9)
+ggdid(attburglary_pc, title = "Average Group Treatment Effect for Burglary Treated in")
+ggsave("attburglary_pc.png", height = 9)
+ggdid(attvehicle_pc, title = "Average Group Treatment Effect for Vehicle Treated in")
+ggsave("attvehicle_pc.png", height = 9)
+ggdid(attlarceny_pc, title = "Average Group Treatment Effect for Larceny Treated in")
+ggsave("attlarceny_pc.png", height = 9)
+ggdid(attrape_pc, title = "Average Group Treatment Effect for Rape Treated in")
+ggsave("attrape_pc.png", height = 9)
